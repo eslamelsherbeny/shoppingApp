@@ -228,49 +228,125 @@ exports.checkoutSession = asyncHandler(async (req, res, next) => {
 
 //   res.status(200).json({ received: true });
 // });
+// const createCardOrder = async (session, next) => {
+//   try {
+//     // Log session data for debugging
+//     console.log("Session data:", JSON.stringify(session, null, 2));
+
+//     // Extract necessary data from the session
+//     const cartId = session.client_reference_id;
+//     const shippingAddress = session.metadata;
+//     const orderPrice = session.amount_total / 100;
+//     const customerEmail = session.customer_email;
+
+//     // Validate critical data
+//     if (!cartId || !customerEmail) {
+//       console.error("Missing necessary data: cartId or customerEmail");
+//       return next(
+//         new ApiError("Invalid session data: cartId or email is missing", 400)
+//       );
+//     }
+
+//     console.log(`Cart ID: ${cartId}, Customer Email: ${customerEmail}`);
+
+//     // Fetch the cart by ID
+//     const cart = await Cart.findOne({ _id: cartId });
+//     if (!cart) {
+//       console.error(`Cart not found with ID: ${cartId}`);
+//       return next(new ApiError(`Cart not found with ID: ${cartId}`, 404));
+//     }
+//     console.log("Cart found:", cart);
+
+//     // Fetch the user by email
+//     const user = await User.findOne({ email: customerEmail });
+//     if (!user) {
+//       console.error(`User not found with email: ${customerEmail}`);
+//       return next(
+//         new ApiError(`User not found with email: ${customerEmail}`, 404)
+//       );
+//     }
+//     console.log("User found:", user);
+
+//     // Log the shipping address for verification
+//     console.log("Shipping address:", shippingAddress);
+
+//     // Create the order
+//     const order = await Order.create({
+//       user: user._id,
+//       cartItems: cart.cartItems,
+//       shippingAddress,
+//       totalOrderPrice: orderPrice,
+//       isPaid: true,
+//       paidAt: Date.now(),
+//       paymentMethodType: "Card",
+//     });
+
+//     if (!order) {
+//       console.error("Order creation failed");
+//       return next(new ApiError("Failed to create order", 500));
+//     }
+//     console.log("Order created:", order);
+
+//     // Update product inventory and sales
+//     const bulkOption = cart.cartItems.map((item) => ({
+//       updateOne: {
+//         filter: { _id: item.product },
+//         update: { $inc: { quantity: -item.quantity, sold: +item.quantity } },
+//       },
+//     }));
+
+//     // Execute bulk write
+//     const bulkResult = await Product.bulkWrite(bulkOption);
+//     console.log("Bulk write result:", bulkResult);
+
+//     // Clear the cart
+//     await Cart.findByIdAndDelete(cartId);
+//     console.log(`Cart with ID: ${cartId} deleted successfully`);
+
+//     console.log("Order processing completed successfully.");
+//   } catch (error) {
+//     // Log the full error stack for debugging
+//     console.error("Error creating order:", error.message, error.stack);
+
+//     // Pass the error to the next middleware
+//     return next(
+//       new ApiError("An error occurred while processing the order", 500)
+//     );
+//   }
+// };
 const createCardOrder = async (session, next) => {
   try {
-    // Log session data for debugging
-    console.log("Session data:", JSON.stringify(session, null, 2));
+    console.log("Session data:", session);
 
-    // Extract necessary data from the session
     const cartId = session.client_reference_id;
+    console.log("Cart ID:", cartId);
+
     const shippingAddress = session.metadata;
     const orderPrice = session.amount_total / 100;
     const customerEmail = session.customer_email;
+    console.log("Customer email:", customerEmail);
 
-    // Validate critical data
     if (!cartId || !customerEmail) {
-      console.error("Missing necessary data: cartId or customerEmail");
-      return next(
-        new ApiError("Invalid session data: cartId or email is missing", 400)
-      );
+      console.error("Missing necessary data for creating order.");
+      return;
     }
 
-    console.log(`Cart ID: ${cartId}, Customer Email: ${customerEmail}`);
-
-    // Fetch the cart by ID
     const cart = await Cart.findOne({ _id: cartId });
-    if (!cart) {
-      console.error(`Cart not found with ID: ${cartId}`);
-      return next(new ApiError(`Cart not found with ID: ${cartId}`, 404));
-    }
     console.log("Cart found:", cart);
 
-    // Fetch the user by email
     const user = await User.findOne({ email: customerEmail });
-    if (!user) {
-      console.error(`User not found with email: ${customerEmail}`);
-      return next(
-        new ApiError(`User not found with email: ${customerEmail}`, 404)
-      );
-    }
     console.log("User found:", user);
 
-    // Log the shipping address for verification
-    console.log("Shipping address:", shippingAddress);
+    if (!cart) {
+      console.error("Cart not found");
+      return next(new ApiError("Cart not found", 404));
+    }
 
-    // Create the order
+    if (!user) {
+      console.error("User not found for email:", customerEmail);
+      return next(new ApiError("User not found", 404));
+    }
+
     const order = await Order.create({
       user: user._id,
       cartItems: cart.cartItems,
@@ -281,37 +357,23 @@ const createCardOrder = async (session, next) => {
       paymentMethodType: "Card",
     });
 
-    if (!order) {
-      console.error("Order creation failed");
-      return next(new ApiError("Failed to create order", 500));
-    }
     console.log("Order created:", order);
 
-    // Update product inventory and sales
-    const bulkOption = cart.cartItems.map((item) => ({
-      updateOne: {
-        filter: { _id: item.product },
-        update: { $inc: { quantity: -item.quantity, sold: +item.quantity } },
-      },
-    }));
+    if (order) {
+      const bulkOption = cart.cartItems.map((item) => ({
+        updateOne: {
+          filter: { _id: item.product },
+          update: { $inc: { quantity: -item.quantity, sold: +item.quantity } },
+        },
+      }));
 
-    // Execute bulk write
-    const bulkResult = await Product.bulkWrite(bulkOption);
-    console.log("Bulk write result:", bulkResult);
+      await Product.bulkWrite(bulkOption, {});
+      await Cart.findByIdAndDelete(cart._id);
 
-    // Clear the cart
-    await Cart.findByIdAndDelete(cartId);
-    console.log(`Cart with ID: ${cartId} deleted successfully`);
-
-    console.log("Order processing completed successfully.");
+      console.log("Order processed successfully");
+    }
   } catch (error) {
-    // Log the full error stack for debugging
-    console.error("Error creating order:", error.message, error.stack);
-
-    // Pass the error to the next middleware
-    return next(
-      new ApiError("An error occurred while processing the order", 500)
-    );
+    console.error("Error creating order:", error);
   }
 };
 
