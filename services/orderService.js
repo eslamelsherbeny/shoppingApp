@@ -238,20 +238,15 @@ const createCardOrder = async (session, next) => {
     const shippingAddress = session.metadata;
     const orderPrice = session.amount_total / 100;
     const customerEmail = session.customer_email;
+    console.log("Customer email:", customerEmail);
 
     if (!cartId || !customerEmail) {
       console.error("Missing necessary data for creating order.");
       return;
     }
 
-    let cart;
-    try {
-      cart = await Cart.findById(cartId);
-      console.log("Cart found:", cart);
-    } catch (err) {
-      console.error("Error fetching cart:", err);
-      return next(new ApiError("Error fetching cart", 500));
-    }
+    const cart = await Cart.findById(cartId);
+    console.log("Cart found:", cart);
 
     const user = await User.findOne({ email: customerEmail });
     console.log("User found:", user);
@@ -262,7 +257,7 @@ const createCardOrder = async (session, next) => {
     }
 
     if (!user) {
-      console.error("User not found");
+      console.error("User not found for email:", customerEmail);
       return next(new ApiError("User not found", 404));
     }
 
