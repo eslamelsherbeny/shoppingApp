@@ -46,6 +46,10 @@ if (process.env.NODE_ENV === "development") {
 // Mount Routes
 mountRoutes(app);
 
+app.get("/", (req, res) => {
+  res.send("Welcome to the API ");
+});
+
 app.all("*", (req, res, next) => {
   next(new ApiError(`Can't find this route: ${req.originalUrl}`, 400));
 });
