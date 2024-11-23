@@ -242,9 +242,12 @@ const createCardOrder = async (session, next) => {
       console.error("Missing necessary data for creating order.");
       return;
     }
-
+    console.log("a1a1a1a1a1a1a1a1a1a1a11a111a1a1a1a11a1a1a1a1");
     const cart = await Cart.findById(cartId);
+    console.log("a222222222222222222222222222222222222222222222222222222222");
+
     const user = await User.findOne({ email: customerEmail });
+    console.log("a3333333333333333333333333333333333333333333333333333");
 
     if (!cart) {
       console.error("Cart not found");
