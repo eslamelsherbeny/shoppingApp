@@ -261,6 +261,7 @@ const createCardOrder = async (session, next) => {
       return next(new ApiError("User not found", 404));
     }
     console.log("Shipping address:", shippingAddress);
+
     console.log(
       "Order price:========================================================="
     );
