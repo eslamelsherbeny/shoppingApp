@@ -54,7 +54,7 @@ exports.createCashOrder = asyncHandler(async (req, res, next) => {
   });
 });
 
-exports.orderFilterObject = (req, res, next) => {
+exports.filterOrderForLoggedUser = (req, res, next) => {
   let filterObject = {};
   if (req.user.role === "user") filterObject = { user: req.user._id };
 
@@ -62,9 +62,9 @@ exports.orderFilterObject = (req, res, next) => {
   next();
 };
 
-exports.getOrders = FactoryHandler.getAll(OrderModel);
+exports.findAllOrders = FactoryHandler.getAll(OrderModel);
 
-exports.getOneOrder = FactoryHandler.getOne(OrderModel);
+exports.findSpecificOrder = FactoryHandler.getOne(OrderModel);
 
 exports.updateOrderToDelivered = asyncHandler(async (req, res, next) => {
   const order = await OrderModel.findById(req.params.id);
@@ -96,7 +96,7 @@ exports.updateOrderToPaid = asyncHandler(async (req, res, next) => {
   });
 });
 
-exports.createCheckoutSession = asyncHandler(async (req, res, next) => {
+exports.checkoutSession = asyncHandler(async (req, res, next) => {
   const { shippingAddress } = req.body;
   const taxPrice = 0;
   const shippingPrice = 0;
