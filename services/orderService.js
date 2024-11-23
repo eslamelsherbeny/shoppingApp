@@ -1,47 +1,40 @@
-const stripe = require("stripe")(
-  "sk_test_51Q7b1IP6UXAivi1g52itZfM6oH4x7W7cH9pXLVwpt62XjvB3ZkDokBga6AcbrnA9zDCGMrD9ffuBzDgjGnFtxzeK002PaFZ4j2"
-);
+// // order services
 const asyncHandler = require("express-async-handler");
-const factory = require("./handlersFactory");
+
+const stripe = require("stripe")(
+  "sk_test_51QJabJHCDjFVghwlSpM4Ia9VMRPRT5LbQJMNRTGVR2p9ms9jFF8BJwtjN2OlxR7MVHdwPBh0Ux9pWYGpVqRdSKbJ00E7Xb2HjB"
+);
+
+const OrderModel = require("../models/orderModel");
+const ProductModel = require("../models/productModel");
+const CartModel = require("../models/cartModel");
+const FactoryHandler = require("./handlersFactory");
 const ApiError = require("../utils/apiError");
+const userModel = require("../models/userModel");
 
-const User = require("../models/userModel");
-const Product = require("../models/productModel");
-const Cart = require("../models/cartModel");
-const Order = require("../models/orderModel");
-
-// @desc    create cash order
-// @route   POST /api/v1/orders/cartId
-// @access  Protected/User
 exports.createCashOrder = asyncHandler(async (req, res, next) => {
-  // app settings
+  const { shippingAddress } = req.body;
   const taxPrice = 0;
   const shippingPrice = 0;
 
-  // 1) Get cart depend on cartId
-  const cart = await Cart.findById(req.params.cartId);
+  const cart = await CartModel.findById(req.params.id);
   if (!cart) {
-    return next(
-      new ApiError(`There is no such cart with id ${req.params.cartId}`, 404)
-    );
+    return next(new ApiError("Cart not found", 404));
   }
 
-  // 2) Get order price depend on cart price "Check if coupon apply"
-  const cartPrice = cart.totalPriceAfterDiscount
+  const totalPrice = cart.totalPriceAfterDiscount
     ? cart.totalPriceAfterDiscount
     : cart.totalCartPrice;
 
-  const totalOrderPrice = cartPrice + taxPrice + shippingPrice;
+  const totalOrderPrice = totalPrice + taxPrice + shippingPrice;
 
-  // 3) Create order with default paymentMethodType cash
-  const order = await Order.create({
+  const order = await OrderModel.create({
     user: req.user._id,
     cartItems: cart.cartItems,
-    shippingAddress: req.body.shippingAddress,
+    shippingAddress,
     totalOrderPrice,
   });
 
-  // 4) After creating order, decrement product quantity, increment product sold
   if (order) {
     const bulkOption = cart.cartItems.map((item) => ({
       updateOne: {
@@ -49,99 +42,76 @@ exports.createCashOrder = asyncHandler(async (req, res, next) => {
         update: { $inc: { quantity: -item.quantity, sold: +item.quantity } },
       },
     }));
-    await Product.bulkWrite(bulkOption, {});
 
-    // 5) Clear cart depend on cartId
-    await Cart.findByIdAndDelete(req.params.cartId);
+    await ProductModel.bulkWrite(bulkOption, {});
+    await CartModel.findByIdAndDelete(req.params.id);
   }
 
-  res.status(201).json({ status: "success", data: order });
+  res.status(200).json({
+    status: "success",
+    data: order,
+    message: "Order placed successfully",
+  });
 });
 
-exports.filterOrderForLoggedUser = asyncHandler(async (req, res, next) => {
-  if (req.user.role === "user") req.filterObj = { user: req.user._id };
+exports.orderFilterObject = (req, res, next) => {
+  let filterObject = {};
+  if (req.user.role === "user") filterObject = { user: req.user._id };
+
+  req.filterObject = filterObject;
   next();
-});
-// @desc    Get all orders
-// @route   POST /api/v1/orders
-// @access  Protected/User-Admin-Manager
-exports.findAllOrders = factory.getAll(Order);
+};
 
-// @desc    Get all orders
-// @route   POST /api/v1/orders
-// @access  Protected/User-Admin-Manager
-exports.findSpecificOrder = factory.getOne(Order);
+exports.getOrders = FactoryHandler.getAll(OrderModel);
 
-// @desc    Update order paid status to paid
-// @route   PUT /api/v1/orders/:id/pay
-// @access  Protected/Admin-Manager
-exports.updateOrderToPaid = asyncHandler(async (req, res, next) => {
-  const order = await Order.findById(req.params.id);
-  if (!order) {
-    return next(
-      new ApiError(
-        `There is no such a order with this id:${req.params.id}`,
-        404
-      )
-    );
-  }
+exports.getOneOrder = FactoryHandler.getOne(OrderModel);
 
-  // update order to paid
-  order.isPaid = true;
-  order.paidAt = Date.now();
-
-  const updatedOrder = await order.save();
-
-  res.status(200).json({ status: "success", data: updatedOrder });
-});
-
-// @desc    Update order delivered status
-// @route   PUT /api/v1/orders/:id/deliver
-// @access  Protected/Admin-Manager
 exports.updateOrderToDelivered = asyncHandler(async (req, res, next) => {
-  const order = await Order.findById(req.params.id);
+  const order = await OrderModel.findById(req.params.id);
   if (!order) {
-    return next(
-      new ApiError(
-        `There is no such a order with this id:${req.params.id}`,
-        404
-      )
-    );
+    return next(new ApiError("Order not found", 404));
   }
-
-  // update order to paid
   order.isDelivered = true;
   order.deliveredAt = Date.now();
-
   const updatedOrder = await order.save();
-
-  res.status(200).json({ status: "success", data: updatedOrder });
+  res.status(200).json({
+    status: "success",
+    data: updatedOrder,
+    message: "Order delivered successfully",
+  });
 });
 
-// @desc    Get checkout session from stripe and send it as response
-// @route   GET /api/v1/orders/checkout-session/cartId
-// @access  Protected/User
-exports.checkoutSession = asyncHandler(async (req, res, next) => {
-  // app settings
+exports.updateOrderToPaid = asyncHandler(async (req, res, next) => {
+  const order = await OrderModel.findById(req.params.id);
+  if (!order) {
+    return next(new ApiError("Order not found", 404));
+  }
+  order.isPaid = true;
+  order.paidAt = Date.now();
+  const updatedOrder = await order.save();
+  res.status(200).json({
+    status: "success",
+    data: updatedOrder,
+    message: "Order paid successfully",
+  });
+});
+
+exports.createCheckoutSession = asyncHandler(async (req, res, next) => {
+  const { shippingAddress } = req.body;
   const taxPrice = 0;
   const shippingPrice = 0;
 
-  // 1) Get cart depend on cartId
-  const cart = await Cart.findById(req.params.cartId);
+  const cart = await CartModel.findById(req.params.id);
   if (!cart) {
-    return next(
-      new ApiError(`There is no such cart with id ${req.params.cartId}`, 404)
-    );
+    return next(new ApiError("Cart not found", 404));
   }
 
-  // 2) Get order price depend on cart price "Check if coupon apply"
-  const cartPrice = cart.totalPriceAfterDiscount
+  const totalPrice = cart.totalPriceAfterDiscount
     ? cart.totalPriceAfterDiscount
     : cart.totalCartPrice;
 
-  const totalOrderPrice = cartPrice + taxPrice + shippingPrice;
+  const totalOrderPrice = totalPrice + taxPrice + shippingPrice;
 
-  // 3) Create stripe checkout session
   const session = await stripe.checkout.sessions.create({
     line_items: [
       {
@@ -156,55 +126,74 @@ exports.checkoutSession = asyncHandler(async (req, res, next) => {
       },
     ],
     mode: "payment",
-    success_url: `${req.protocol}://${req.get("host")}/orders`,
+    success_url: `${req.protocol}://${req.get("host")}/order`,
     cancel_url: `${req.protocol}://${req.get("host")}/cart`,
+    client_reference_id: req.params.id,
     customer_email: req.user.email,
-    client_reference_id: req.params.cartId,
-    metadata: req.body.shippingAddress,
+    metadata: shippingAddress,
   });
 
-  // 4) send session to response
-  res.status(200).json({ status: "success", session });
+  res.status(200).json({
+    status: "success",
+    data: session,
+    url: session.url,
+  });
 });
 
-const createCardOrder = async (session) => {
-  const cartId = session.client_reference_id;
-  const shippingAddress = session.metadata;
-  const oderPrice = session.amount_total / 100;
+const createCardOrder = async (session, next) => {
+  try {
+    const cartId = session.client_reference_id;
+    const shippingAddress = session.metadata;
+    const orderPrice = session.amount_total / 100;
+    const customerEmail = session.customer_email;
 
-  const cart = await Cart.findById(cartId);
-  const user = await User.findOne({ email: session.customer_email });
+    if (!cartId || !customerEmail) {
+      console.error("Missing necessary data for creating order.");
+      return;
+    }
 
-  // 3) Create order with default paymentMethodType card
-  const order = await Order.create({
-    user: user._id,
-    cartItems: cart.cartItems,
-    shippingAddress,
-    totalOrderPrice: oderPrice,
-    isPaid: true,
-    paidAt: Date.now(),
-    paymentMethodType: "card",
-  });
+    const cart = await CartModel.findById(cartId);
+    const user = await userModel.findOne({ email: customerEmail });
 
-  // 4) After creating order, decrement product quantity, increment product sold
-  if (order) {
-    const bulkOption = cart.cartItems.map((item) => ({
-      updateOne: {
-        filter: { _id: item.product },
-        update: { $inc: { quantity: -item.quantity, sold: +item.quantity } },
-      },
-    }));
-    await Product.bulkWrite(bulkOption, {});
+    if (!cart) {
+      console.error("Cart not found");
+      return next(new ApiError("Cart not found", 404));
+    }
 
-    // 5) Clear cart depend on cartId
-    await Cart.findByIdAndDelete(cartId);
+    if (!user) {
+      console.error("User not found");
+      return next(new ApiError("User not found", 404));
+    }
+
+    const order = await OrderModel.create({
+      user: user._id,
+      cartItems: cart.cartItems,
+      shippingAddress,
+      totalOrderPrice: orderPrice,
+      isPaid: true,
+      paidAt: Date.now(),
+      paymentMethodType: "Card",
+    });
+
+    if (order) {
+      const bulkOption = cart.cartItems.map((item) => ({
+        updateOne: {
+          filter: { _id: item.product },
+          update: { $inc: { quantity: -item.quantity, sold: +item.quantity } },
+        },
+      }));
+      await ProductModel.bulkWrite(bulkOption, {});
+
+      await CartModel.findByIdAndDelete(cartId);
+    }
+  } catch (error) {
+    console.error("Error creating order:", error);
   }
 };
 
-// @desc    This webhook will run when stripe payment success paid
-// @route   POST /webhook-checkout
-// @access  Protected/User
 exports.webhookCheckout = asyncHandler(async (req, res, next) => {
+  console.log("Webhook received:", req.body);
+
   const sig = req.headers["stripe-signature"];
 
   let event;
@@ -213,17 +202,19 @@ exports.webhookCheckout = asyncHandler(async (req, res, next) => {
     event = stripe.webhooks.constructEvent(
       req.body,
       sig,
-      "whsec_LR1gV6umxyF2m3pBRIt9g3Chk86PoHuA"
+      "whsec_laAwwXcTpTHOvd52CkxxKGR0jkfpOCOf"
     );
+    console.log("Webhook verified:", event.id);
   } catch (err) {
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    console.log("Webhook Error:", err.message);
+    return res
+      .status(400)
+      .send(`Webhook Error-------------------------: ${err.message}`);
   }
+
   if (event.type === "checkout.session.completed") {
-    try {
-      await createCardOrder(event.data.object);
-    } catch (error) {
-      console.error("Error creating card order:", error.message);
-    }
+    console.log("Webhook completed -------:");
+    createCardOrder(event.data.object, next);
   }
 
   res.status(200).json({ received: true });
