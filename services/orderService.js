@@ -331,7 +331,7 @@ const createCardOrder = async (session, next) => {
       return;
     }
 
-    const cart = await Cart.findOne({ _id: cartId });
+    const cart = await Cart.findById(cartId);
     console.log("Cart found:", cart);
 
     const user = await User.findOne({ email: customerEmail });
