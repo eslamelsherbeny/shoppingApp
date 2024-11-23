@@ -2,7 +2,7 @@
 const asyncHandler = require("express-async-handler");
 
 const stripe = require("stripe")(
-  "sk_test_51QJabJHCDjFVghwlSpM4Ia9VMRPRT5LbQJMNRTGVR2p9ms9jFF8BJwtjN2OlxR7MVHdwPBh0Ux9pWYGpVqRdSKbJ00E7Xb2HjB"
+  "sk_test_51Q7b1IP6UXAivi1g52itZfM6oH4x7W7cH9pXLVwpt62XjvB3ZkDokBga6AcbrnA9zDCGMrD9ffuBzDgjGnFtxzeK002PaFZ4j2"
 );
 
 const OrderModel = require("../models/orderModel");
@@ -202,7 +202,7 @@ exports.webhookCheckout = asyncHandler(async (req, res, next) => {
     event = stripe.webhooks.constructEvent(
       req.body,
       sig,
-      "whsec_laAwwXcTpTHOvd52CkxxKGR0jkfpOCOf"
+      "whsec_LR1gV6umxyF2m3pBRIt9g3Chk86PoHuA"
     );
     console.log("Webhook verified:", event.id);
   } catch (err) {
