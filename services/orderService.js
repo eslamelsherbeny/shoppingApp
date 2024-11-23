@@ -260,7 +260,7 @@ const createCardOrder = async (session, next) => {
       console.error("User not found for email:", customerEmail);
       return next(new ApiError("User not found", 404));
     }
-
+    console.log(",mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm");
     const order = await Order.create({
       user: user._id,
       cartItems: cart.cartItems,
