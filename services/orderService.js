@@ -250,7 +250,7 @@ const createCardOrder = async (session, next) => {
     console.log(`Cart ID: ${cartId}, Customer Email: ${customerEmail}`);
 
     // Fetch the cart by ID
-    const cart = await Cart.findById(cartId);
+    const cart = await Cart.findOne({ _id: cartId });
     if (!cart) {
       console.error(`Cart not found with ID: ${cartId}`);
       return next(new ApiError(`Cart not found with ID: ${cartId}`, 404));
