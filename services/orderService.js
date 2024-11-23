@@ -213,7 +213,7 @@ exports.webhookCheckout = asyncHandler(async (req, res, next) => {
     event = stripe.webhooks.constructEvent(
       req.body,
       sig,
-      "whsec_WrY7vjuBvDnLAABGhyAw895Eer7j5lH7"
+      "whsec_LR1gV6umxyF2m3pBRIt9g3Chk86PoHuA"
     );
     console.log("event", event);
   } catch (err) {
