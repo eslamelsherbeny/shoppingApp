@@ -230,10 +230,11 @@ exports.checkoutSession = asyncHandler(async (req, res, next) => {
 // });
 const createCardOrder = async (session, next) => {
   try {
-    console.log(
-      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-    );
+    console.log("Session data:", session);
+
     const cartId = session.client_reference_id;
+    console.log("Cart ID:", cartId);
+
     const shippingAddress = session.metadata;
     const orderPrice = session.amount_total / 100;
     const customerEmail = session.customer_email;
@@ -242,27 +243,29 @@ const createCardOrder = async (session, next) => {
       console.error("Missing necessary data for creating order.");
       return;
     }
-    console.log("a1a1a1a1a1a1a1a1a1a1a11a111a1a1a1a11a1a1a1a1");
-    const cart = await Cart.findById(cartId);
-    console.log("a222222222222222222222222222222222222222222222222222222222");
+
+    let cart;
+    try {
+      cart = await Cart.findById(cartId);
+      console.log("Cart found:", cart);
+    } catch (err) {
+      console.error("Error fetching cart:", err);
+      return next(new ApiError("Error fetching cart", 500));
+    }
 
     const user = await User.findOne({ email: customerEmail });
-    console.log("a3333333333333333333333333333333333333333333333333333");
+    console.log("User found:", user);
 
     if (!cart) {
       console.error("Cart not found");
       return next(new ApiError("Cart not found", 404));
     }
-    console.log(
-      "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-    );
+
     if (!user) {
       console.error("User not found");
       return next(new ApiError("User not found", 404));
     }
-    console.log(
-      "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
-    );
+
     const order = await Order.create({
       user: user._id,
       cartItems: cart.cartItems,
@@ -273,9 +276,8 @@ const createCardOrder = async (session, next) => {
       paymentMethodType: "Card",
     });
 
-    console.log(
-      "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-    );
+    console.log("Order created:", order);
+
     if (order) {
       const bulkOption = cart.cartItems.map((item) => ({
         updateOne: {
@@ -284,14 +286,10 @@ const createCardOrder = async (session, next) => {
         },
       }));
 
-      console.log(
-        "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-      );
       await Product.bulkWrite(bulkOption, {});
-
       await Cart.findByIdAndDelete(cartId);
 
-      console.log("ffffffffffffffffffffffffffffffffff");
+      console.log("Order processed successfully");
     }
   } catch (error) {
     console.error("Error creating order:", error);
