@@ -248,7 +248,7 @@ const createCardOrder = async (session, next) => {
     const cart = await Cart.findById(cartId);
     console.log("Cart found:", cart);
 
-    const user = await User.findOne({ email: "user1@gmail.com" });
+    const user = await User.findOne({ email: customerEmail });
     console.log("User found:", user);
 
     if (!cart) {
@@ -260,7 +260,7 @@ const createCardOrder = async (session, next) => {
       console.error("User not found for email:", customerEmail);
       return next(new ApiError("User not found", 404));
     }
-    console.log(",mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm");
+
     const order = await Order.create({
       user: user._id,
       cartItems: cart.cartItems,
