@@ -230,6 +230,9 @@ exports.checkoutSession = asyncHandler(async (req, res, next) => {
 // });
 const createCardOrder = async (session, next) => {
   try {
+    console.log(
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    );
     const cartId = session.client_reference_id;
     const shippingAddress = session.metadata;
     const orderPrice = session.amount_total / 100;
@@ -247,12 +250,16 @@ const createCardOrder = async (session, next) => {
       console.error("Cart not found");
       return next(new ApiError("Cart not found", 404));
     }
-
+    console.log(
+      "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    );
     if (!user) {
       console.error("User not found");
       return next(new ApiError("User not found", 404));
     }
-
+    console.log(
+      "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    );
     const order = await Order.create({
       user: user._id,
       cartItems: cart.cartItems,
@@ -263,6 +270,9 @@ const createCardOrder = async (session, next) => {
       paymentMethodType: "Card",
     });
 
+    console.log(
+      "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    );
     if (order) {
       const bulkOption = cart.cartItems.map((item) => ({
         updateOne: {
@@ -270,9 +280,15 @@ const createCardOrder = async (session, next) => {
           update: { $inc: { quantity: -item.quantity, sold: +item.quantity } },
         },
       }));
+
+      console.log(
+        "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      );
       await Product.bulkWrite(bulkOption, {});
 
       await Cart.findByIdAndDelete(cartId);
+
+      console.log("ffffffffffffffffffffffffffffffffff");
     }
   } catch (error) {
     console.error("Error creating order:", error);
