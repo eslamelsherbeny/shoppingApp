@@ -1,5 +1,5 @@
 const stripe = require("stripe")(
-  "sk_test_51QJabJHCDjFVghwlSpM4Ia9VMRPRT5LbQJMNRTGVR2p9ms9jFF8BJwtjN2OlxR7MVHdwPBh0Ux9pWYGpVqRdSKbJ00E7Xb2HjB"
+  "sk_test_51Q7b1IP6UXAivi1g52itZfM6oH4x7W7cH9pXLVwpt62XjvB3ZkDokBga6AcbrnA9zDCGMrD9ffuBzDgjGnFtxzeK002PaFZ4j2"
 );
 const asyncHandler = require("express-async-handler");
 const factory = require("./handlersFactory");
@@ -215,13 +215,11 @@ exports.webhookCheckout = asyncHandler(async (req, res, next) => {
       sig,
       "whsec_LR1gV6umxyF2m3pBRIt9g3Chk86PoHuA"
     );
-    console.log("event", event);
   } catch (err) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
   if (event.type === "checkout.session.completed") {
     //  Create order
-    console.log("event.data", event.data.object);
     createCardOrder(event.data.object);
   }
 
