@@ -213,13 +213,15 @@ exports.webhookCheckout = asyncHandler(async (req, res, next) => {
     event = stripe.webhooks.constructEvent(
       req.body,
       sig,
-      process.env.STRIPE_WEBHOOK_SECRET
+      "whsec_WrY7vjuBvDnLAABGhyAw895Eer7j5lH7"
     );
+    console.log("event", event);
   } catch (err) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
   if (event.type === "checkout.session.completed") {
     //  Create order
+    console.log("event.data", event.data.object);
     createCardOrder(event.data.object);
   }
 
