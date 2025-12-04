@@ -1,4 +1,5 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose')
+
 // 1- Create Schema
 const categorySchema = new mongoose.Schema(
   {
@@ -17,25 +18,31 @@ const categorySchema = new mongoose.Schema(
     image: String,
   },
   { timestamps: true }
-);
+)
 
+// ✅ التعديل هنا: التأكد من أن الصورة ليست رابط خارجي (Cloudinary)
 const setImageURL = (doc) => {
   if (doc.image) {
-    const imageUrl = `${process.env.BASE_URL}/categories/${doc.image}`;
-    doc.image = imageUrl;
+    // لو الرابط مش بيبدأ بـ http (يعني صورة محلية)، ضيف الدومين
+    if (!doc.image.startsWith('http')) {
+      const imageUrl = `${process.env.BASE_URL}/categories/${doc.image}`
+      doc.image = imageUrl
+    }
+    // لو بيبدأ بـ http (زي Cloudinary)، سيبه زي ما هو
   }
-};
+}
+
 // findOne, findAll and update
 categorySchema.post('init', (doc) => {
-  setImageURL(doc);
-});
+  setImageURL(doc)
+})
 
 // create
 categorySchema.post('save', (doc) => {
-  setImageURL(doc);
-});
+  setImageURL(doc)
+})
 
 // 2- Create model
-const CategoryModel = mongoose.model('Category', categorySchema);
+const CategoryModel = mongoose.model('Category', categorySchema)
 
-module.exports = CategoryModel;
+module.exports = CategoryModel

@@ -1,9 +1,9 @@
-const asyncHandler = require('express-async-handler');
-const ApiError = require('../utils/apiError');
+const asyncHandler = require("express-async-handler");
+const ApiError = require("../utils/apiError");
 
-const Product = require('../models/productModel');
-const Coupon = require('../models/couponModel');
-const Cart = require('../models/cartModel');
+const Product = require("../models/productModel");
+const Coupon = require("../models/couponModel");
+const Cart = require("../models/cartModel");
 
 const calcTotalCartPrice = (cart) => {
   let totalPrice = 0;
@@ -53,8 +53,8 @@ exports.addProductToCart = asyncHandler(async (req, res, next) => {
   await cart.save();
 
   res.status(200).json({
-    status: 'success',
-    message: 'Product added to cart successfully',
+    status: 200,
+    message: "Product added to cart successfully",
     numOfCartItems: cart.cartItems.length,
     data: cart,
   });
@@ -73,7 +73,9 @@ exports.getLoggedUserCart = asyncHandler(async (req, res, next) => {
   }
 
   res.status(200).json({
-    status: 'success',
+    status: 200,
+    message: "Cart fetched successfully",
+
     numOfCartItems: cart.cartItems.length,
     data: cart,
   });
@@ -95,7 +97,8 @@ exports.removeSpecificCartItem = asyncHandler(async (req, res, next) => {
   cart.save();
 
   res.status(200).json({
-    status: 'success',
+    status: 200,
+    message: "Cart item removed successfully",
     numOfCartItems: cart.cartItems.length,
     data: cart,
   });
@@ -106,7 +109,10 @@ exports.removeSpecificCartItem = asyncHandler(async (req, res, next) => {
 // @access  Private/User
 exports.clearCart = asyncHandler(async (req, res, next) => {
   await Cart.findOneAndDelete({ user: req.user._id });
-  res.status(204).send();
+  res.status(204).json({
+    status: 200,
+    message: "Cart cleared successfully",
+  });
 });
 
 // @desc    Update specific cart item quantity
@@ -138,7 +144,8 @@ exports.updateCartItemQuantity = asyncHandler(async (req, res, next) => {
   await cart.save();
 
   res.status(200).json({
-    status: 'success',
+    status: 200,
+    message: "Cart item quantity updated successfully",
     numOfCartItems: cart.cartItems.length,
     data: cart,
   });
@@ -173,7 +180,8 @@ exports.applyCoupon = asyncHandler(async (req, res, next) => {
   await cart.save();
 
   res.status(200).json({
-    status: 'success',
+    status: 200,
+    message: "Coupon applied successfully",
     numOfCartItems: cart.cartItems.length,
     data: cart,
   });

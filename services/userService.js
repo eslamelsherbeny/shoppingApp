@@ -1,16 +1,16 @@
-const asyncHandler = require('express-async-handler');
-const { v4: uuidv4 } = require('uuid');
-const sharp = require('sharp');
-const bcrypt = require('bcryptjs');
+const asyncHandler = require("express-async-handler");
+const { v4: uuidv4 } = require("uuid");
+const sharp = require("sharp");
+const bcrypt = require("bcryptjs");
 
-const factory = require('./handlersFactory');
-const ApiError = require('../utils/apiError');
-const { uploadSingleImage } = require('../middlewares/uploadImageMiddleware');
-const createToken = require('../utils/createToken');
-const User = require('../models/userModel');
+const factory = require("./handlersFactory");
+const ApiError = require("../utils/apiError");
+const { uploadSingleImage } = require("../middlewares/uploadImageMiddleware");
+const createToken = require("../utils/createToken");
+const User = require("../models/userModel");
 
 // Upload single image
-exports.uploadUserImage = uploadSingleImage('profileImg');
+exports.uploadUserImage = uploadSingleImage("profileImg");
 
 // Image processing
 exports.resizeImage = asyncHandler(async (req, res, next) => {
@@ -19,7 +19,7 @@ exports.resizeImage = asyncHandler(async (req, res, next) => {
   if (req.file) {
     await sharp(req.file.buffer)
       .resize(600, 600)
-      .toFormat('jpeg')
+      .toFormat("jpeg")
       .jpeg({ quality: 95 })
       .toFile(`uploads/users/${filename}`);
 
@@ -85,7 +85,13 @@ exports.changeUserPassword = asyncHandler(async (req, res, next) => {
   if (!document) {
     return next(new ApiError(`No document for this id ${req.params.id}`, 404));
   }
-  res.status(200).json({ data: document });
+  res
+    .status(200)
+    .json({
+      status: 200,
+      message: "Password changed successfully",
+      data: document,
+    });
 });
 
 // @desc    Delete specific user
@@ -120,7 +126,14 @@ exports.updateLoggedUserPassword = asyncHandler(async (req, res, next) => {
   // 2) Generate token
   const token = createToken(user._id);
 
-  res.status(200).json({ data: user, token });
+  res
+    .status(200)
+    .json({
+      status: 200,
+      message: "Password changed successfully",
+      data: user,
+      token,
+    });
 });
 
 // @desc    Update logged user data (without password, role)
@@ -137,7 +150,13 @@ exports.updateLoggedUserData = asyncHandler(async (req, res, next) => {
     { new: true }
   );
 
-  res.status(200).json({ data: updatedUser });
+  res
+    .status(200)
+    .json({
+      status: 200,
+      message: "User updated successfully",
+      data: updatedUser,
+    });
 });
 
 // @desc    Deactivate logged user
@@ -146,5 +165,7 @@ exports.updateLoggedUserData = asyncHandler(async (req, res, next) => {
 exports.deleteLoggedUserData = asyncHandler(async (req, res, next) => {
   await User.findByIdAndUpdate(req.user._id, { active: false });
 
-  res.status(204).json({ status: 'Success' });
+  res
+    .status(204)
+    .json({ status: 200, message: "User deactivated successfully" });
 });

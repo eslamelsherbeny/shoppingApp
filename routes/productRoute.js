@@ -1,59 +1,64 @@
-const express = require("express");
+const express = require('express')
+
+// استيراد الميدلوير الخاص بتهيئة البيانات
+const { formatProductData } = require('../middlewares/formatFormData')
+
 const {
   getProductValidator,
   createProductValidator,
   updateProductValidator,
   deleteProductValidator,
-} = require("../utils/validators/productValidator");
+} = require('../utils/validators/productValidator')
 
 const {
   getProducts,
   getProduct,
+  getProductBySlug, // 👈 استيراد الدالة الجديدة
   createProduct,
   updateProduct,
   deleteProduct,
   uploadProductImages,
   resizeProductImages,
-} = require("../services/productService");
-const authService = require("../services/authService");
-const reviewsRoute = require("./reviewRoute");
+} = require('../services/productService')
 
-const router = express.Router();
+const authService = require('../services/authService')
+const reviewsRoute = require('./reviewRoute')
 
-// POST   /products/jkshjhsdjh2332n/reviews
-// GET    /products/jkshjhsdjh2332n/reviews
-// GET    /products/jkshjhsdjh2332n/reviews/87487sfww3
+const router = express.Router()
 
-router.use("/:productId/reviews", reviewsRoute);
+// Nested route for reviews
+router.use('/:productId/reviews', reviewsRoute)
+
+router.route('/').get(getProducts).post(
+  authService.protect,
+  authService.allowedTo('admin', 'manager'),
+  uploadProductImages,
+  resizeProductImages,
+  formatProductData, // ميدلوير إصلاح البيانات
+  createProductValidator,
+  createProduct
+)
+
+// ✅ إضافة راوت الـ Slug (يجب أن يكون قبل الـ ID)
+router.route('/slug/:slug').get(getProductBySlug)
 
 router
-  .route("/")
-  .get(getProducts)
-  .post(
-    authService.protect,
-    authService.allowedTo("admin", "manager"),
-    uploadProductImages,
-    resizeProductImages,
-    createProductValidator,
-    createProduct
-  );
-
-router
-  .route("/:id")
+  .route('/:id')
   .get(getProductValidator, getProduct)
   .put(
     authService.protect,
-    authService.allowedTo("admin", "manager"),
+    authService.allowedTo('admin', 'manager'),
     uploadProductImages,
     resizeProductImages,
+    formatProductData, // ميدلوير إصلاح البيانات عند التعديل
     updateProductValidator,
     updateProduct
   )
   .delete(
     authService.protect,
-    authService.allowedTo("admin"),
+    authService.allowedTo('admin'),
     deleteProductValidator,
     deleteProduct
-  );
+  )
 
-module.exports = router;
+module.exports = router

@@ -19,12 +19,15 @@ exports.signup = asyncHandler(async (req, res, next) => {
     name: req.body.name,
     email: req.body.email,
     password: req.body.password,
+    phone: req.body.phone,
   });
 
   // 2- Generate token
   const token = createToken(user._id);
 
-  res.status(201).json({ data: user, token });
+  res
+    .status(201)
+    .json({ status: 200, message: "User created", data: user, token: token });
 });
 
 // @desc    Login
@@ -44,7 +47,12 @@ exports.login = asyncHandler(async (req, res, next) => {
   // Delete password from response
   delete user._doc.password;
   // 4) send response to client side
-  res.status(200).json({ data: user, token });
+  res.status(200).json({
+    status: 200,
+    messsage: "Logged in successfully",
+    data: user,
+    token,
+  });
 });
 
 // @desc   make sure the user is logged in
@@ -158,9 +166,7 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
     return next(new ApiError("There is an error in sending email", 500));
   }
 
-  res
-    .status(200)
-    .json({ status: "Success", message: "Reset code sent to email" });
+  res.status(200).json({ status: 200, message: "Reset code sent to email" });
 });
 
 // @desc    Verify password reset code
@@ -186,7 +192,8 @@ exports.verifyPassResetCode = asyncHandler(async (req, res, next) => {
   await user.save();
 
   res.status(200).json({
-    status: "Success",
+    status: 200,
+    message: "Reset code verified successfully",
   });
 });
 
@@ -217,7 +224,7 @@ exports.resetPassword = asyncHandler(async (req, res, next) => {
   // 3) if everything is ok, generate token
   const token = createToken(user._id);
   res.status(200).json({
-    status: "success",
+    status: 200,
     token: token,
     message: "password changed successfully",
   });
