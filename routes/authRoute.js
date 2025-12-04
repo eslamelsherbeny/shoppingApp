@@ -3,7 +3,6 @@ const {
   signupValidator,
   loginValidator,
 } = require('../utils/validators/authValidator')
-// const { formatFormData } = require('../middlewares/formatFormData');
 
 const {
   signup,
