@@ -20,11 +20,21 @@ dbConnection()
 // express app
 const app = express()
 
-// Enable other domains to access your application
-app.use(cors())
+app.use(
+  cors({
+    origin: [
+      'http://localhost:3000',
+      'https://shopping-app-five-taupe.vercel.app',
+    ],
+
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+)
+
 app.options('*', cors())
 
-// compress all responses
 app.use(compression())
 
 // Checkout webhook
@@ -34,7 +44,6 @@ app.post(
   webhookCheckout
 )
 
-// Middlewares
 app.use(express.json())
 app.use(express.static(path.join(__dirname, 'uploads')))
 
@@ -43,7 +52,6 @@ if (process.env.NODE_ENV === 'development') {
   console.log(`mode: ${process.env.NODE_ENV}`)
 }
 
-// Mount Routes
 mountRoutes(app)
 
 app.get('/', (req, res) => {
@@ -54,7 +62,6 @@ app.all('*', (req, res, next) => {
   next(new ApiError(`Can't find this route: ${req.originalUrl}`, 400))
 })
 
-// Global error handling middleware for express
 app.use(globalError)
 
 const PORT = process.env.PORT || 8000
@@ -63,7 +70,6 @@ const server = app.listen(PORT, () => {
   console.log(`App running running on port ${PORT}`)
 })
 
-// Handle rejection outside express
 process.on('unhandledRejection', (err) => {
   console.error(`UnhandledRejection Errors: ${err.name} | ${err.message}`)
   server.close(() => {
