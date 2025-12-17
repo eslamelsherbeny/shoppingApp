@@ -1,6 +1,5 @@
-const asyncHandler = require("express-async-handler");
-
-const User = require("../models/userModel");
+const asyncHandler = require('express-async-handler')
+const User = require('../models/userModel')
 
 // @desc    Add product to wishlist
 // @route   POST /api/v1/wishlist
@@ -13,14 +12,14 @@ exports.addProductToWishlist = asyncHandler(async (req, res, next) => {
       $addToSet: { wishlist: req.body.productId },
     },
     { new: true }
-  );
+  ).populate('wishlist') // ✅ التعديل هنا: أضفنا populate
 
   res.status(200).json({
     status: 200,
-    message: "Product added successfully to your wishlist.",
+    message: 'Product added successfully to your wishlist.',
     data: user.wishlist,
-  });
-});
+  })
+})
 
 // @desc    Remove product from wishlist
 // @route   DELETE /api/v1/wishlist/:productId
@@ -33,24 +32,24 @@ exports.removeProductFromWishlist = asyncHandler(async (req, res, next) => {
       $pull: { wishlist: req.params.productId },
     },
     { new: true }
-  );
+  ).populate('wishlist') // ✅ التعديل هنا: أضفنا populate
 
   res.status(200).json({
     status: 200,
-    message: "Product removed successfully from your wishlist.",
+    message: 'Product removed successfully from your wishlist.',
     data: user.wishlist,
-  });
-});
+  })
+})
 
 // @desc    Get logged user wishlist
 // @route   GET /api/v1/wishlist
 // @access  Protected/User
 exports.getLoggedUserWishlist = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user._id).populate("wishlist");
+  const user = await User.findById(req.user._id).populate('wishlist')
 
   res.status(200).json({
     status: 200,
     results: user.wishlist.length,
     data: user.wishlist,
-  });
-});
+  })
+})
