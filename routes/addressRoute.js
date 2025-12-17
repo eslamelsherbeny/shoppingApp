@@ -1,19 +1,21 @@
-const express = require('express');
+const express = require('express')
 
-const authService = require('../services/authService');
+const authService = require('../services/authService')
 
 const {
   addAddress,
   removeAddress,
   getLoggedUserAddresses,
-} = require('../services/addressService');
+  updateAddress, // ✅ إضافة
+} = require('../services/addressService')
 
-const router = express.Router();
+const router = express.Router()
 
-router.use(authService.protect, authService.allowedTo('user'));
+router.use(authService.protect, authService.allowedTo('user'))
 
-router.route('/').post(addAddress).get(getLoggedUserAddresses);
+router.route('/').post(addAddress).get(getLoggedUserAddresses)
 
-router.delete('/:addressId', removeAddress);
+// ✅ إضافة route التعديل
+router.route('/:addressId').put(updateAddress).delete(removeAddress)
 
-module.exports = router;
+module.exports = router
