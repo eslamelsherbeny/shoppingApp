@@ -15,7 +15,10 @@ router.use(authService.protect, authService.allowedTo('user'))
 
 router.route('/').post(addAddress).get(getLoggedUserAddresses)
 
-// ✅ إضافة route التعديل
-router.route('/:addressId').put(updateAddress).delete(removeAddress)
+// ✅ تحديث route
+router
+  .route('/:addressId')
+  .put(updateAddress) // إضافة PUT للتعديل
+  .delete(removeAddress)
 
 module.exports = router
