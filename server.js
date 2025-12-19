@@ -24,7 +24,8 @@ app.use(
   cors({
     origin: [
       'http://localhost:3000',
-      'https://shopping-app-five-taupe.vercel.app',
+      'https://assum.vercel.app',
+      'http://localhost:8000',
     ],
 
     credentials: true,
