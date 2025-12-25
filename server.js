@@ -25,6 +25,7 @@ app.use(
     origin: [
       'http://localhost:3000',
       'https://assum.vercel.app',
+      'https://basma-alpha.vercel.app',
       'http://localhost:8000',
     ],
 
